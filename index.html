@@ -33,32 +33,36 @@
   .header { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; gap:12px; }
   .title { font-size:20px; font-weight:600; margin:0; }
   .sub { display:flex; align-items:center; gap:8px; }
-  .count { font-size:12px; color:var(--muted); border:1px solid var(--border); padding:3px 8px; border-radius:4px; }
-  .menu-btn { background:#fff; border:1px solid var(--border); width:28px; height:28px; border-radius:4px; cursor:pointer; font-size:16px; }
+  .count { font-size:12px; color:var(--muted); }
+  .menu-btn { background:none; border:none; width:24px; height:24px; cursor:pointer; font-size:16px; color:var(--fg); }
   .menu-panel { position:absolute; top:52px; right:16px; background:#fff; border:1px solid var(--border); border-radius:6px; z-index:40; min-width:180px; overflow:hidden; }
   .menu-item { display:block; width:100%; text-align:left; padding:9px 12px; background:none; border:none; border-bottom:1px solid var(--border-light); font-size:13.5px; cursor:pointer; }
   .menu-item:last-child { border-bottom:none; }
   .menu-email { padding:9px 12px; font-size:11.5px; color:var(--muted); border-bottom:1px solid var(--border-light); word-break:break-all; }
 
-  .cat-row { display:flex; gap:6px; overflow-x:auto; margin-bottom:14px; }
-  .cat-chip { flex:0 0 auto; font-size:12px; padding:5px 11px; border-radius:4px; border:1px solid var(--border); background:#fff; cursor:pointer; white-space:nowrap; }
-  .cat-chip.active { background:var(--fg); border-color:var(--fg); color:#fff; }
+  .tab-row { display:flex; align-items:center; overflow-x:auto; margin-bottom:14px; white-space:nowrap; }
+  .tab-chip { flex:0 0 auto; font-size:12px; padding:2px 6px; border:none; background:none; color:var(--fg); cursor:pointer; white-space:nowrap; }
+  .tab-chip.top { font-weight:700; }
+  .tab-chip.active { text-decoration:underline; }
+  .tab-sep { color:var(--border); font-size:12px; }
 
   .empty { margin-top:15vh; text-align:center; color:var(--muted); font-size:14px; }
 
-  .grid { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
-  @media (min-width:640px) { .grid { grid-template-columns:repeat(3,1fr); } }
-  @media (min-width:980px) { .grid { grid-template-columns:repeat(5,1fr); } }
+  .grid { display:grid; grid-template-columns:repeat(3,1fr); gap:5px; }
+  @media (min-width:640px) { .grid { grid-template-columns:repeat(4,1fr); } }
+  @media (min-width:980px) { .grid { grid-template-columns:repeat(6,1fr); } }
 
-  .card { border:1px solid var(--border); border-radius:6px; padding:8px; position:relative; text-decoration:none; color:inherit; display:block; }
-  .del-btn { position:absolute; top:4px; right:4px; width:20px; height:20px; border-radius:3px; background:#fff; border:1px solid var(--border); color:var(--muted); font-size:12px; line-height:1; cursor:pointer; z-index:3; }
-  .thumb { width:100%; aspect-ratio:1/1; border-radius:4px; overflow:hidden; background:var(--chip-bg); display:flex; align-items:center; justify-content:center; margin-bottom:6px; }
+  .card { border:none; border-radius:6px; padding:4px; position:relative; text-decoration:none; color:inherit; display:block; }
+  .del-btn, .edit-btn { position:absolute; top:2px; width:18px; height:18px; border-radius:3px; background:#fff; border:1px solid var(--border); color:var(--muted); font-size:10px; line-height:1; cursor:pointer; z-index:3; }
+  .del-btn { right:2px; }
+  .edit-btn { left:2px; }
+  .thumb { width:100%; aspect-ratio:1/1; overflow:hidden; background:#f7f7f7; display:flex; align-items:center; justify-content:center; margin-bottom:3px; }
   .thumb img { width:100%; height:100%; object-fit:cover; display:block; }
   .thumb-fallback { font-size:22px; color:var(--muted); }
-  .price-tag { display:block; font-weight:600; font-size:13px; margin-bottom:3px; }
-  .cat-pill { display:inline-block; font-size:10px; background:var(--chip-bg); padding:1px 6px; border-radius:3px; margin-bottom:4px; }
-  .site { font-size:10.5px; color:var(--muted); display:block; margin-bottom:2px; }
-  .name { font-size:13px; line-height:1.35; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .name-line { font-size:13px; text-align:center; margin-bottom:1px; line-height:1.25; }
+  .name-line .cat-text { color:var(--muted); }
+  .site { font-size:9.5px; color:var(--muted); display:block; text-align:center; margin-bottom:1px; }
+  .price-tag { display:block; font-weight:600; font-size:11.5px; text-align:center; }
 
   .fab { position:fixed; right:18px; bottom:20px; width:52px; height:52px; border-radius:50%; background:var(--fg); color:#fff; border:none; font-size:24px; cursor:pointer; z-index:30; }
 
@@ -100,7 +104,7 @@
       <button class="menu-item" id="menu-clear">전체 삭제</button>
       <button class="menu-item" id="menu-logout">로그아웃</button>
     </div>
-    <div id="cat-row" class="cat-row hidden"></div>
+    <div id="tab-row" class="tab-row"></div>
     <div id="storage-banner" class="banner hidden"></div>
     <div id="empty-view" class="empty hidden"></div>
     <div id="grid" class="grid"></div>
@@ -158,6 +162,24 @@
     </div>
   </div>
 
+  <div id="edit-cat-overlay" class="overlay hidden">
+    <div class="sheet">
+      <h2>상품 수정</h2>
+      <div class="field">
+        <label>카테고리</label>
+        <input type="text" id="edit-cat-input" list="cat-list" placeholder="예: 옷, 가전, 인테리어 (비우면 미분류)" />
+      </div>
+      <div class="field" style="display:flex; align-items:center; gap:8px;">
+        <input type="checkbox" id="edit-purchased-input" style="width:auto;" />
+        <label style="margin:0;" for="edit-purchased-input">이미 구매함</label>
+      </div>
+      <div class="row">
+        <button class="btn ghost" id="edit-cat-cancel">취소</button>
+        <button class="btn primary" id="edit-cat-save">저장</button>
+      </div>
+    </div>
+  </div>
+
 </div>
 
 <script>
@@ -170,8 +192,10 @@
 
   var items = [];
   var activeCategory = "all";
+  var currentBoard = "all"; // "all" | "purchased"
   var draft = null;
   var pendingDeleteId = null;
+  var editingItemId = null;
   var isSignupMode = false;
 
   function $(id) { return document.getElementById(id); }
@@ -272,6 +296,13 @@
       render();
     });
   }
+  function persistUpdateItem(id, patch) {
+    return sb.from("items").update(patch).eq("id", id).then(function (res) {
+      if (res.error) { alert("수정 실패: " + res.error.message); return; }
+      items = items.map(function (it) { return it.id === id ? Object.assign({}, it, patch) : it; });
+      render();
+    });
+  }
   function persistClearAll() {
     var ids = items.map(function (it) { return it.id; });
     if (ids.length === 0) return Promise.resolve();
@@ -285,60 +316,78 @@
   // ---------- 렌더링 ----------
   function getCategories() {
     var set = {}; var hasUncategorized = false;
-    items.forEach(function (it) { if (it.category) set[it.category] = true; else hasUncategorized = true; });
+    items.forEach(function (it) {
+      if (it.purchased) return; // 카테고리 목록은 "전체" 게시판 기준
+      if (it.category) set[it.category] = true; else hasUncategorized = true;
+    });
     var list = Object.keys(set).sort(function (a, b) { return a.localeCompare(b, "ko"); });
     if (hasUncategorized) list.push("__uncategorized__");
     return list;
   }
   function getFiltered() {
-    if (activeCategory === "all") return items;
-    if (activeCategory === "__uncategorized__") return items.filter(function (it) { return !it.category; });
-    return items.filter(function (it) { return it.category === activeCategory; });
+    var byBoard = items.filter(function (it) { return currentBoard === "all" ? !it.purchased : !!it.purchased; });
+    if (currentBoard === "purchased") return byBoard;
+    if (activeCategory === "all") return byBoard;
+    if (activeCategory === "__uncategorized__") return byBoard.filter(function (it) { return !it.category; });
+    return byBoard.filter(function (it) { return it.category === activeCategory; });
+  }
+
+  function renderTabRow() {
+    var row = $("tab-row");
+    var cats = getCategories();
+    var tabs = [{ type: "board", key: "all", label: "전체" }]
+      .concat(cats.map(function (c) { return { type: "cat", key: c, label: c === "__uncategorized__" ? "미분류" : c }; }))
+      .concat([{ type: "board", key: "purchased", label: "이미 산 아이템" }]);
+
+    row.innerHTML = tabs.map(function (t, i) {
+      var sep = i > 0 ? '<span class="tab-sep">ㅣ</span>' : "";
+      var isActive = t.type === "board"
+        ? (t.key === "purchased" ? currentBoard === "purchased" : (currentBoard === "all" && activeCategory === "all"))
+        : (currentBoard === "all" && activeCategory === t.key);
+      var cls = "tab-chip" + (t.type === "board" ? " top" : "") + (isActive ? " active" : "");
+      return sep + '<button class="' + cls + '" data-type="' + t.type + '" data-key="' + escapeHtml(t.key) + '">' + escapeHtml(t.label) + "</button>";
+    }).join("");
+
+    row.querySelectorAll(".tab-chip").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var type = btn.getAttribute("data-type");
+        var key = btn.getAttribute("data-key");
+        if (type === "board") { currentBoard = key; activeCategory = "all"; }
+        else { currentBoard = "all"; activeCategory = key; }
+        render();
+      });
+    });
   }
 
   function render() {
-    $("item-count").textContent = items.length + "개";
-    var cats = getCategories();
-    var catRow = $("cat-row");
-    if (cats.length === 0) { catRow.classList.add("hidden"); catRow.innerHTML = ""; }
-    else {
-      catRow.classList.remove("hidden");
-      var html = '<button class="cat-chip' + (activeCategory === "all" ? " active" : "") + '" data-cat="all">전체</button>';
-      cats.forEach(function (c) {
-        var label = c === "__uncategorized__" ? "미분류" : c;
-        html += '<button class="cat-chip' + (activeCategory === c ? " active" : "") + '" data-cat="' + escapeHtml(c) + '">' + escapeHtml(label) + "</button>";
-      });
-      catRow.innerHTML = html;
-      catRow.querySelectorAll(".cat-chip").forEach(function (btn) {
-        btn.addEventListener("click", function () { activeCategory = btn.getAttribute("data-cat"); render(); });
-      });
-    }
-
+    renderTabRow();
     var filtered = getFiltered();
+    $("item-count").textContent = filtered.length + "개";
+
     var emptyView = $("empty-view"); var grid = $("grid");
     if (items.length === 0) {
       emptyView.textContent = "아직 담긴 게 없어요. 오른쪽 아래 + 버튼으로 첫 상품을 담아보세요.";
       emptyView.classList.remove("hidden"); grid.innerHTML = ""; return;
     }
     if (filtered.length === 0) {
-      emptyView.textContent = "이 카테고리엔 담긴 게 없어요.";
+      emptyView.textContent = currentBoard === "purchased" ? "아직 구매 완료로 표시한 게 없어요." : "이 카테고리엔 담긴 게 없어요.";
       emptyView.classList.remove("hidden"); grid.innerHTML = ""; return;
     }
     emptyView.classList.add("hidden");
 
     grid.innerHTML = filtered.map(function (it) {
-      var priceHtml = it.price ? '<span class="price-tag">' + escapeHtml(formatPrice(it.price, it.currency)) + "</span>" : "";
-      var catHtml = it.category ? '<span class="cat-pill">' + escapeHtml(it.category) + "</span>" : "";
+      var catHtml = it.category ? ' <span class="cat-text">' + escapeHtml(it.category) + "</span>" : "";
       var imgHtml = it.image
         ? '<img src="' + escapeHtml(it.image) + '" alt="" loading="lazy" onerror="this.style.display=\'none\'" />'
         : '<span class="thumb-fallback">' + escapeHtml((it.site || "?")[0] || "?") + "</span>";
       return (
         '<a class="card" href="' + escapeHtml(it.url) + '" target="_blank" rel="noopener noreferrer">' +
+        '<button class="edit-btn" data-edit="' + it.id + '" aria-label="상품 수정">✎</button>' +
         '<button class="del-btn" data-del="' + it.id + '" aria-label="삭제">×</button>' +
         '<div class="thumb">' + imgHtml + "</div>" +
-        priceHtml + catHtml +
+        '<div class="name-line">' + escapeHtml(it.title || "") + catHtml + "</div>" +
         '<span class="site">' + escapeHtml(it.site || "") + "</span>" +
-        '<div class="name">' + escapeHtml(it.title || "") + "</div>" +
+        (it.price ? '<span class="price-tag">' + escapeHtml(formatPrice(it.price, it.currency)) + "</span>" : "") +
         "</a>"
       );
     }).join("");
@@ -350,7 +399,37 @@
         $("confirm-delete").classList.remove("hidden");
       });
     });
+    grid.querySelectorAll("[data-edit]").forEach(function (btn) {
+      btn.addEventListener("click", function (e) {
+        e.preventDefault(); e.stopPropagation();
+        openItemEdit(btn.getAttribute("data-edit"));
+      });
+    });
   }
+
+  function openItemEdit(id) {
+    var item = items.find(function (it) { return it.id === id; });
+    if (!item) return;
+    editingItemId = id;
+    $("edit-cat-input").value = item.category || "";
+    $("edit-purchased-input").checked = !!item.purchased;
+    var catList = $("cat-list");
+    catList.innerHTML = getCategories().filter(function (c) { return c !== "__uncategorized__"; })
+      .map(function (c) { return '<option value="' + escapeHtml(c) + '"></option>'; }).join("");
+    $("edit-cat-overlay").classList.remove("hidden");
+    setTimeout(function () { $("edit-cat-input").focus(); }, 50);
+  }
+  $("edit-cat-cancel").addEventListener("click", function () { $("edit-cat-overlay").classList.add("hidden"); editingItemId = null; });
+  $("edit-cat-overlay").addEventListener("click", function (e) { if (e.target === $("edit-cat-overlay")) { $("edit-cat-overlay").classList.add("hidden"); editingItemId = null; } });
+  $("edit-cat-save").addEventListener("click", function () {
+    if (!editingItemId) return;
+    persistUpdateItem(editingItemId, {
+      category: $("edit-cat-input").value.trim() || null,
+      purchased: $("edit-purchased-input").checked
+    });
+    $("edit-cat-overlay").classList.add("hidden");
+    editingItemId = null;
+  });
 
   // ---------- 메뉴 ----------
   $("menu-btn").addEventListener("click", function () { $("menu-panel").classList.toggle("hidden"); });
