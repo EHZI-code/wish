@@ -2,80 +2,84 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
 <title>위시함</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fragment+Mono&display=swap">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
   :root { --bg:#fff; --fg:#111; --muted:#666; --border:#ccc; --border-light:#e5e5e5; --chip-bg:#f0f0f0; --danger:#b3261e; }
   * { box-sizing: border-box; }
   html, body { height: 100%; }
-  body { margin:0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--fg); }
+  body { margin:0; font-family: "Fragment Mono", -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", monospace; font-size:12px; background: var(--bg); color: var(--fg); }
+  button, input, select { font-family: inherit; }
   #root { min-height:100%; padding:16px; position:relative; }
   .hidden { display:none !important; }
 
   #login-view { max-width:340px; margin:18vh auto 0; text-align:left; }
-  #login-view h1 { font-size:20px; margin:0 0 4px; }
-  #login-view p.sub { color:var(--muted); font-size:13px; margin:0 0 20px; }
+  #login-view h1 { font-size:12px; font-weight:700; margin:0 0 4px; }
+  #login-view p.sub { color:var(--muted); font-size:12px; margin:0 0 20px; }
   .field { margin-bottom:12px; }
   .field label { display:block; font-size:12px; color:var(--muted); margin-bottom:4px; }
-  .field input { width:100%; padding:10px; border-radius:6px; border:1px solid var(--border); font-size:14px; }
-  .btn { padding:10px; border-radius:6px; border:1px solid var(--border); font-size:14px; font-weight:500; cursor:pointer; background:#fff; }
-  .btn.primary { background:var(--fg); color:#fff; border-color:var(--fg); }
+  .field input, .field select { width:100%; padding:10px; border-radius:6px; border:1px solid var(--border); font-size:12px; background:#fff; color:var(--fg); }
+  .field-note { font-size:12px; color:var(--muted); margin-top:4px; }
+  .field-note:empty { display:none; }
+  .field-note.error { color:var(--danger); }
+  .btn { padding:10px; border-radius:6px; border:1px solid var(--border); font-size:12px; font-weight:400; cursor:pointer; background:#fff; }
+  .btn.primary { background:var(--fg); color:#fff; border-color:var(--fg); font-weight:700; }
   .btn.primary:disabled { opacity:.4; cursor:not-allowed; }
   .btn.ghost { background:#fff; color:var(--muted); }
+  .btn.danger { background:#fff; color:var(--danger); border-color:var(--danger); }
   .row { display:flex; gap:8px; }
   .row .btn { flex:1; }
-  #login-msg { font-size:13px; margin:10px 0; min-height:18px; }
+  #login-msg { font-size:12px; margin:10px 0; min-height:18px; }
   #login-msg.err { color:var(--danger); }
-  #login-toggle { text-align:center; margin-top:14px; font-size:13px; color:var(--muted); }
-  #login-toggle button { background:none; border:none; color:var(--fg); text-decoration:underline; cursor:pointer; font-size:13px; padding:0; }
+  #login-toggle { text-align:center; margin-top:14px; font-size:12px; color:var(--muted); line-height:1.8; }
+  #login-toggle button { background:none; border:none; color:var(--fg); text-decoration:underline; cursor:pointer; font-size:12px; padding:0; }
 
   .header { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; gap:12px; }
-  .title { font-size:20px; font-weight:600; margin:0; }
+  .title { font-size:12px; font-weight:700; margin:0; }
   .sub { display:flex; align-items:center; gap:8px; }
   .count { font-size:12px; color:var(--muted); }
-  .menu-btn { background:none; border:none; width:24px; height:24px; cursor:pointer; font-size:16px; color:var(--fg); }
+  .menu-btn { background:none; border:none; width:24px; height:24px; cursor:pointer; font-size:12px; color:var(--fg); }
   .menu-panel { position:absolute; top:52px; right:16px; background:#fff; border:1px solid var(--border); border-radius:6px; z-index:40; min-width:180px; overflow:hidden; }
-  .menu-item { display:block; width:100%; text-align:left; padding:9px 12px; background:none; border:none; border-bottom:1px solid var(--border-light); font-size:13.5px; cursor:pointer; }
+  .menu-item { display:block; width:100%; text-align:left; padding:9px 12px; background:none; border:none; border-bottom:1px solid var(--border-light); font-size:12px; cursor:pointer; color:var(--fg); }
   .menu-item:last-child { border-bottom:none; }
-  .menu-email { padding:9px 12px; font-size:11.5px; color:var(--muted); border-bottom:1px solid var(--border-light); word-break:break-all; }
+  .menu-email { padding:9px 12px; font-size:12px; color:var(--muted); border-bottom:1px solid var(--border-light); word-break:break-all; }
 
-  .tab-row { display:flex; align-items:center; overflow-x:auto; margin-bottom:14px; white-space:nowrap; }
-  .tab-chip { flex:0 0 auto; font-size:12px; padding:2px 6px; border:none; background:none; color:var(--fg); cursor:pointer; white-space:nowrap; }
+  .tab-row { display:flex; align-items:center; overflow-x:auto; margin-bottom:12px; white-space:nowrap; }
+  .tab-chip { flex:0 0 auto; font-size:12px; padding:2px 6px; border:none; background:none; color:var(--fg); cursor:pointer; white-space:nowrap; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; }
   .tab-chip.top { font-weight:700; }
   .tab-chip.active { text-decoration:underline; }
   .tab-sep { color:var(--border); font-size:12px; }
 
-  .empty { margin-top:15vh; text-align:center; color:var(--muted); font-size:14px; }
+  .empty { margin-top:15vh; text-align:center; color:var(--muted); font-size:12px; }
 
-  .grid { display:grid; grid-template-columns:repeat(3,1fr); gap:5px; }
+  .grid { display:grid; grid-template-columns:repeat(3,1fr); column-gap:5px; row-gap:3px; }
   @media (min-width:640px) { .grid { grid-template-columns:repeat(4,1fr); } }
   @media (min-width:980px) { .grid { grid-template-columns:repeat(6,1fr); } }
 
-  .card { border:none; border-radius:6px; padding:4px; position:relative; text-decoration:none; color:inherit; display:block; }
-  .del-btn, .edit-btn { position:absolute; top:2px; width:18px; height:18px; border-radius:3px; background:#fff; border:1px solid var(--border); color:var(--muted); font-size:10px; line-height:1; cursor:pointer; z-index:3; }
-  .del-btn { right:2px; }
-  .edit-btn { left:2px; }
-  .thumb { width:100%; aspect-ratio:1/1; overflow:hidden; background:#f7f7f7; display:flex; align-items:center; justify-content:center; margin-bottom:3px; }
-  .thumb img { width:100%; height:100%; object-fit:cover; display:block; }
+  .card { border:none; border-radius:6px; padding:4px; position:relative; text-decoration:none; color:inherit; display:block; cursor:pointer; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; -webkit-user-drag:none; }
+  .thumb { width:100%; aspect-ratio:1/1; overflow:hidden; background:#f7f7f7; display:flex; align-items:center; justify-content:center; margin-bottom:5.4px; }
+  .thumb img { width:100%; height:100%; object-fit:cover; display:block; -webkit-user-drag:none; }
   .thumb-fallback { font-size:22px; color:var(--muted); }
-  .name-line { font-size:13px; text-align:center; margin-bottom:1px; line-height:1.25; }
+  .name-line { font-size:12px; text-align:left; margin-bottom:1px; line-height:1.25; }
   .name-line .cat-text { color:var(--muted); }
-  .site { font-size:9.5px; color:var(--muted); display:block; text-align:center; margin-bottom:1px; }
-  .price-tag { display:block; font-weight:600; font-size:11.5px; text-align:center; }
+  .site { font-size:9.5px; color:var(--muted); display:block; text-align:left; margin-bottom:1px; }
+  .price-tag { display:block; font-weight:700; font-size:11.5px; text-align:left; }
 
   .fab { position:fixed; right:18px; bottom:20px; width:52px; height:52px; border-radius:50%; background:var(--fg); color:#fff; border:none; font-size:24px; cursor:pointer; z-index:30; }
 
   .overlay { position:fixed; inset:0; background:rgba(0,0,0,.4); z-index:50; display:flex; align-items:flex-end; justify-content:center; }
   .sheet { background:#fff; width:100%; max-width:480px; border-radius:12px 12px 0 0; padding:20px; max-height:85vh; overflow-y:auto; }
-  .sheet h2 { font-size:17px; font-weight:600; margin:0 0 14px; }
-  .hint { font-size:12.5px; color:var(--muted); margin:-4px 0 12px; line-height:1.5; }
+  .sheet h2 { font-size:12px; font-weight:700; margin:0 0 14px; }
+  .hint { font-size:12px; color:var(--muted); margin:-4px 0 12px; line-height:1.5; }
   .hint.warn { color:var(--danger); }
 
   .confirm-overlay { position:fixed; inset:0; background:rgba(0,0,0,.4); z-index:60; display:flex; align-items:center; justify-content:center; padding:24px; }
   .confirm-box { background:#fff; border-radius:8px; padding:18px; max-width:320px; width:100%; text-align:center; }
-  .confirm-box p { font-size:14px; margin:0 0 14px; }
-  .banner { padding:9px 12px; border-radius:6px; font-size:12.5px; margin-bottom:12px; border:1px solid var(--border-light); background:var(--chip-bg); }
+  .confirm-box p { font-size:12px; margin:0 0 14px; }
+  .banner { padding:9px 12px; border-radius:6px; font-size:12px; margin-bottom:12px; border:1px solid var(--border-light); background:var(--chip-bg); }
 </style>
 </head>
 <body>
@@ -83,26 +87,26 @@
 
   <div id="login-view">
     <h1>위시함</h1>
-    <p class="sub">로그인하면 어느 기기에서든 같은 목록을 볼 수 있어요.</p>
-    <div class="field"><label>이메일</label><input type="email" id="login-email" autocomplete="username" /></div>
-    <div class="field"><label>비밀번호 (6자 이상)</label><input type="password" id="login-password" autocomplete="current-password" /></div>
+    <p class="sub">로그인하면 저장한 아이템들을 볼 수 있습니다.</p>
+    <div class="field"><label>e-mail</label><input type="email" id="login-email" autocomplete="username" /></div>
+    <div class="field"><label>password</label><input type="password" id="login-password" autocomplete="current-password" /></div>
     <div id="login-msg"></div>
-    <button class="btn primary" id="login-submit" style="width:100%">로그인</button>
-    <div id="login-toggle">계정이 없으신가요? <button id="to-signup">회원가입</button></div>
+    <button class="btn primary" id="login-submit" style="width:100%">log-in</button>
+    <div id="login-toggle">계정이 없다면<br><button id="to-signup">join</button></div>
   </div>
 
   <div id="app-view" class="hidden">
     <div class="header">
       <h1 class="title">위시함</h1>
       <div class="sub">
-        <span class="count" id="item-count">0개</span>
+        <span class="count" id="item-count">0 items</span>
         <button class="menu-btn" id="menu-btn">⋯</button>
       </div>
     </div>
     <div id="menu-panel" class="menu-panel hidden">
       <div class="menu-email" id="menu-email"></div>
-      <button class="menu-item" id="menu-clear">전체 삭제</button>
-      <button class="menu-item" id="menu-logout">로그아웃</button>
+      <button class="menu-item" id="menu-clear">delete all</button>
+      <button class="menu-item" id="menu-logout">log-out</button>
     </div>
     <div id="tab-row" class="tab-row"></div>
     <div id="storage-banner" class="banner hidden"></div>
@@ -114,29 +118,31 @@
   <div id="add-overlay" class="overlay hidden">
     <div class="sheet">
       <div id="add-step-input">
-        <h2>상품 링크 담기</h2>
-        <div class="field"><label>상품 페이지 주소</label><input type="text" id="url-input" inputmode="url" placeholder="https://..." /></div>
+        <h2>add item</h2>
+        <div class="field"><label>link</label><input type="text" id="url-input" inputmode="url" placeholder="https://..." /></div>
         <div class="row">
-          <button class="btn ghost" id="skip-manual">직접 입력할게요</button>
-          <button class="btn primary" id="fetch-info">정보 가져오기</button>
+          <button class="btn ghost" id="cancel-add">cancel</button>
+          <button class="btn ghost" id="skip-manual">직접 입력</button>
+          <button class="btn primary" id="fetch-info">add item</button>
         </div>
       </div>
       <div id="add-step-preview" class="hidden">
-        <h2>확인하고 저장하기</h2>
-        <div id="fetch-fail-hint" class="hint warn hidden">이 사이트에서는 자동으로 정보를 가져오지 못했어요. 아래 항목을 직접 채워주세요.</div>
+        <h2>check and add item</h2>
+        <div id="fetch-fail-hint" class="hint warn hidden">could not fetch automatically. please fill in manually.</div>
         <div class="thumb" id="preview-thumb" style="aspect-ratio:4/3; margin-bottom:12px;"></div>
-        <div class="field"><label>이미지 주소 (선택)</label><input type="text" id="draft-image" /></div>
-        <div class="field"><label>상품명</label><input type="text" id="draft-title" /></div>
-        <div class="field"><label>가격 (숫자만, 선택)</label><input type="text" id="draft-price" inputmode="numeric" /></div>
-        <div class="field"><label>사이트</label><input type="text" id="draft-site" /></div>
+        <div class="field"><label>image link</label><input type="text" id="draft-image" /></div>
+        <div class="field"><label>name*</label><input type="text" id="draft-title" /></div>
+        <div class="field"><label>price</label><input type="text" id="draft-price" inputmode="numeric" /></div>
+        <div class="field"><label>site*</label><input type="text" id="draft-site" /></div>
         <div class="field">
-          <label>카테고리 (선택)</label>
-          <input type="text" id="draft-category" list="cat-list" placeholder="예: 옷, 가전, 인테리어" />
+          <label>category</label>
+          <input type="text" id="draft-category" list="cat-list" placeholder="e.g. clothes, home, tech" />
           <datalist id="cat-list"></datalist>
         </div>
+        <div class="hint" style="margin:0 0 12px;">*는 필수 입력입니다.</div>
         <div class="row">
-          <button class="btn ghost" id="back-to-input">뒤로</button>
-          <button class="btn primary" id="save-draft">저장하기</button>
+          <button class="btn ghost" id="back-to-input">cancel</button>
+          <button class="btn primary" id="save-draft">save</button>
         </div>
       </div>
     </div>
@@ -144,10 +150,10 @@
 
   <div id="confirm-delete" class="confirm-overlay hidden">
     <div class="confirm-box">
-      <p>이 상품을 위시함에서 뺄까요?</p>
+      <p>delete item from list</p>
       <div class="row">
-        <button class="btn ghost" id="cancel-delete">취소</button>
-        <button class="btn primary" id="do-delete">빼기</button>
+        <button class="btn ghost" id="cancel-delete">cancel</button>
+        <button class="btn danger" id="do-delete">delete</button>
       </div>
     </div>
   </div>
@@ -156,26 +162,47 @@
     <div class="confirm-box">
       <p id="clear-msg"></p>
       <div class="row">
-        <button class="btn ghost" id="cancel-clear">취소</button>
-        <button class="btn primary" id="do-clear">전부 삭제</button>
+        <button class="btn ghost" id="cancel-clear">cancel</button>
+        <button class="btn danger" id="do-clear">delete all</button>
       </div>
     </div>
   </div>
 
   <div id="edit-cat-overlay" class="overlay hidden">
     <div class="sheet">
-      <h2>상품 수정</h2>
+      <h2>edit item</h2>
+      <div class="hint">press and hold a card to edit. tap to open the page.</div>
+      <div class="field"><label>name</label><input type="text" id="edit-title" /></div>
       <div class="field">
-        <label>카테고리</label>
-        <input type="text" id="edit-cat-input" list="cat-list" placeholder="예: 옷, 가전, 인테리어 (비우면 미분류)" />
+        <label>category</label>
+        <select id="edit-category"></select>
+        <input type="text" id="edit-category-new" class="hidden" maxlength="20" placeholder="new category name" style="margin-top:8px;" />
+        <div class="field-note" id="edit-category-note"></div>
       </div>
       <div class="field" style="display:flex; align-items:center; gap:8px;">
         <input type="checkbox" id="edit-purchased-input" style="width:auto;" />
-        <label style="margin:0;" for="edit-purchased-input">이미 구매함</label>
+        <label style="margin:0;" for="edit-purchased-input">add to my items</label>
       </div>
       <div class="row">
-        <button class="btn ghost" id="edit-cat-cancel">취소</button>
-        <button class="btn primary" id="edit-cat-save">저장</button>
+        <button class="btn danger" id="edit-delete">delete</button>
+        <button class="btn ghost" id="edit-cat-cancel">cancel</button>
+        <button class="btn primary" id="edit-cat-save">save</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="rename-overlay" class="overlay hidden">
+    <div class="sheet">
+      <h2>edit category</h2>
+      <div class="hint">이 카테고리의 모든 아이템에 적용됩니다.</div>
+      <div class="field">
+        <label>new name</label>
+        <input type="text" id="rename-input" maxlength="20" />
+        <div class="field-note" id="rename-note"></div>
+      </div>
+      <div class="row">
+        <button class="btn ghost" id="rename-cancel">cancel</button>
+        <button class="btn primary" id="rename-save">save</button>
       </div>
     </div>
   </div>
@@ -197,6 +224,36 @@
   var pendingDeleteId = null;
   var editingItemId = null;
   var isSignupMode = false;
+  var renamingCategory = null;
+
+  var RESERVED_NAMES = ["전체", "미분류", "이미 산 아이템", "all", "other", "my items", "__new__", "__uncategorized__"];
+  function isReserved(name) { return RESERVED_NAMES.indexOf(String(name).toLowerCase()) !== -1; }
+  function setNote(id, msg, isError) {
+    var el = $(id);
+    el.textContent = msg || "";
+    el.className = "field-note" + (isError ? " error" : "");
+  }
+  // 꾹 누르기: 짧게 탭하면 onTap(없으면 원래 동작), 0.5초 이상 누르면 onLongPress
+  function attachLongPress(el, onLongPress, onTap) {
+    var timer = null, fired = false, lastTouch = 0;
+    function start() {
+      fired = false; clearTimeout(timer);
+      timer = setTimeout(function () { fired = true; if (navigator.vibrate) navigator.vibrate(15); onLongPress(); }, 500);
+    }
+    function cancel() { clearTimeout(timer); }
+    el.addEventListener("touchstart", function () { lastTouch = Date.now(); start(); }, { passive: true });
+    el.addEventListener("touchend", cancel);
+    el.addEventListener("touchmove", cancel);
+    el.addEventListener("touchcancel", cancel);
+    el.addEventListener("mousedown", function () { if (Date.now() - lastTouch < 800) return; start(); });
+    el.addEventListener("mouseup", cancel);
+    el.addEventListener("mouseleave", cancel);
+    el.addEventListener("contextmenu", function (e) { if (fired) e.preventDefault(); });
+    el.addEventListener("click", function (e) {
+      if (fired) { e.preventDefault(); e.stopPropagation(); fired = false; return; }
+      if (onTap) onTap(e);
+    });
+  }
 
   function $(id) { return document.getElementById(id); }
   function escapeHtml(s) {
@@ -221,7 +278,7 @@
     if (cur === "USD") return "$" + n.toLocaleString();
     if (cur === "EUR") return "€" + n.toLocaleString();
     if (cur === "JPY") return "¥" + n.toLocaleString();
-    return n.toLocaleString() + "원";
+    return "₩" + n.toLocaleString();
   }
 
   // ---------- 자동 정보 가져오기: 우리 자신의 서버 함수를 호출 ----------
@@ -238,24 +295,24 @@
 
   $("to-signup").addEventListener("click", function () {
     isSignupMode = !isSignupMode;
-    $("login-submit").textContent = isSignupMode ? "회원가입" : "로그인";
-    $("to-signup").textContent = isSignupMode ? "로그인" : "회원가입";
-    document.querySelector("#login-toggle").firstChild.textContent = isSignupMode ? "이미 계정이 있으신가요? " : "계정이 없으신가요? ";
+    $("login-submit").textContent = isSignupMode ? "join" : "log-in";
+    $("to-signup").textContent = isSignupMode ? "log-in" : "join";
+    document.querySelector("#login-toggle").firstChild.textContent = isSignupMode ? "이미 계정이 있다면" : "계정이 없다면";
     setLoginMsg("");
   });
 
   $("login-submit").addEventListener("click", function () {
     var email = $("login-email").value.trim();
     var password = $("login-password").value;
-    if (!email || password.length < 6) { setLoginMsg("이메일과 6자 이상 비밀번호를 입력해주세요.", true); return; }
-    setLoginMsg(isSignupMode ? "가입 처리 중…" : "로그인 중…");
+    if (!email || password.length < 6) { setLoginMsg("enter your e-mail and a password of 6+ characters.", true); return; }
+    setLoginMsg("loading···");
     var action = isSignupMode
       ? sb.auth.signUp({ email: email, password: password })
       : sb.auth.signInWithPassword({ email: email, password: password });
     action.then(function (res) {
       if (res.error) { setLoginMsg(res.error.message, true); return; }
       if (isSignupMode && res.data && res.data.user && !res.data.session) {
-        setLoginMsg("가입 확인 이메일을 보냈어요. 메일함을 확인해서 인증해주세요.");
+        setLoginMsg("check your e-mail to verify your account.");
         return;
       }
       setLoginMsg("");
@@ -284,21 +341,21 @@
   }
   function persistInsert(item) {
     return sb.from("items").insert(item).select().then(function (res) {
-      if (res.error) { alert("저장 실패: " + res.error.message); return; }
+      if (res.error) { alert("save failed: " + res.error.message); return; }
       items = (res.data || []).concat(items);
       render();
     });
   }
   function persistDelete(id) {
     return sb.from("items").delete().eq("id", id).then(function (res) {
-      if (res.error) { alert("삭제 실패: " + res.error.message); return; }
+      if (res.error) { alert("delete failed: " + res.error.message); return; }
       items = items.filter(function (it) { return it.id !== id; });
       render();
     });
   }
   function persistUpdateItem(id, patch) {
     return sb.from("items").update(patch).eq("id", id).then(function (res) {
-      if (res.error) { alert("수정 실패: " + res.error.message); return; }
+      if (res.error) { alert("edit failed: " + res.error.message); return; }
       items = items.map(function (it) { return it.id === id ? Object.assign({}, it, patch) : it; });
       render();
     });
@@ -307,8 +364,17 @@
     var ids = items.map(function (it) { return it.id; });
     if (ids.length === 0) return Promise.resolve();
     return sb.from("items").delete().in("id", ids).then(function (res) {
-      if (res.error) { alert("삭제 실패: " + res.error.message); return; }
+      if (res.error) { alert("delete failed: " + res.error.message); return; }
       items = [];
+      render();
+    });
+  }
+
+  function persistRenameCategory(oldName, newName) {
+    return sb.from("items").update({ category: newName }).eq("category", oldName).then(function (res) {
+      if (res.error) { alert("edit failed: " + res.error.message); return; }
+      items = items.map(function (it) { return it.category === oldName ? Object.assign({}, it, { category: newName }) : it; });
+      if (currentBoard === "all" && activeCategory === oldName) activeCategory = newName;
       render();
     });
   }
@@ -324,6 +390,11 @@
     if (hasUncategorized) list.push("__uncategorized__");
     return list;
   }
+  function getAllCategories() {
+    var set = {};
+    items.forEach(function (it) { if (it.category) set[it.category] = true; });
+    return Object.keys(set).sort(function (a, b) { return a.localeCompare(b, "ko"); });
+  }
   function getFiltered() {
     var byBoard = items.filter(function (it) { return currentBoard === "all" ? !it.purchased : !!it.purchased; });
     if (currentBoard === "purchased") return byBoard;
@@ -335,9 +406,9 @@
   function renderTabRow() {
     var row = $("tab-row");
     var cats = getCategories();
-    var tabs = [{ type: "board", key: "all", label: "전체" }]
-      .concat(cats.map(function (c) { return { type: "cat", key: c, label: c === "__uncategorized__" ? "미분류" : c }; }))
-      .concat([{ type: "board", key: "purchased", label: "이미 산 아이템" }]);
+    var tabs = [{ type: "board", key: "all", label: "all" }]
+      .concat(cats.map(function (c) { return { type: "cat", key: c, label: c === "__uncategorized__" ? "other" : c, renamable: c !== "__uncategorized__" }; }))
+      .concat([{ type: "board", key: "purchased", label: "my items" }]);
 
     row.innerHTML = tabs.map(function (t, i) {
       var sep = i > 0 ? '<span class="tab-sep">ㅣ</span>' : "";
@@ -345,32 +416,37 @@
         ? (t.key === "purchased" ? currentBoard === "purchased" : (currentBoard === "all" && activeCategory === "all"))
         : (currentBoard === "all" && activeCategory === t.key);
       var cls = "tab-chip" + (t.type === "board" ? " top" : "") + (isActive ? " active" : "");
-      return sep + '<button class="' + cls + '" data-type="' + t.type + '" data-key="' + escapeHtml(t.key) + '">' + escapeHtml(t.label) + "</button>";
+      return sep + '<button class="' + cls + '" data-type="' + t.type + '" data-key="' + escapeHtml(t.key) + '"' + (t.renamable ? ' data-renamable="1"' : "") + '>' + escapeHtml(t.label) + "</button>";
     }).join("");
 
     row.querySelectorAll(".tab-chip").forEach(function (btn) {
-      btn.addEventListener("click", function () {
-        var type = btn.getAttribute("data-type");
-        var key = btn.getAttribute("data-key");
+      var type = btn.getAttribute("data-type");
+      var key = btn.getAttribute("data-key");
+      function select() {
         if (type === "board") { currentBoard = key; activeCategory = "all"; }
         else { currentBoard = "all"; activeCategory = key; }
         render();
-      });
+      }
+      if (btn.getAttribute("data-renamable") === "1") {
+        attachLongPress(btn, function () { openRename(key); }, select);
+      } else {
+        btn.addEventListener("click", select);
+      }
     });
   }
 
   function render() {
     renderTabRow();
     var filtered = getFiltered();
-    $("item-count").textContent = filtered.length + "개";
+    $("item-count").textContent = filtered.length + (filtered.length === 1 ? " item" : " items");
 
     var emptyView = $("empty-view"); var grid = $("grid");
     if (items.length === 0) {
-      emptyView.textContent = "아직 담긴 게 없어요. 오른쪽 아래 + 버튼으로 첫 상품을 담아보세요.";
+      emptyView.textContent = "empty page";
       emptyView.classList.remove("hidden"); grid.innerHTML = ""; return;
     }
     if (filtered.length === 0) {
-      emptyView.textContent = currentBoard === "purchased" ? "아직 구매 완료로 표시한 게 없어요." : "이 카테고리엔 담긴 게 없어요.";
+      emptyView.textContent = "empty page";
       emptyView.classList.remove("hidden"); grid.innerHTML = ""; return;
     }
     emptyView.classList.add("hidden");
@@ -381,9 +457,7 @@
         ? '<img src="' + escapeHtml(it.image) + '" alt="" loading="lazy" onerror="this.style.display=\'none\'" />'
         : '<span class="thumb-fallback">' + escapeHtml((it.site || "?")[0] || "?") + "</span>";
       return (
-        '<a class="card" href="' + escapeHtml(it.url) + '" target="_blank" rel="noopener noreferrer">' +
-        '<button class="edit-btn" data-edit="' + it.id + '" aria-label="상품 수정">✎</button>' +
-        '<button class="del-btn" data-del="' + it.id + '" aria-label="삭제">×</button>' +
+        '<a class="card" draggable="false" data-id="' + escapeHtml(it.id) + '" href="' + escapeHtml(it.url) + '" target="_blank" rel="noopener noreferrer">' +
         '<div class="thumb">' + imgHtml + "</div>" +
         '<div class="name-line">' + escapeHtml(it.title || "") + catHtml + "</div>" +
         '<span class="site">' + escapeHtml(it.site || "") + "</span>" +
@@ -392,43 +466,89 @@
       );
     }).join("");
 
-    grid.querySelectorAll("[data-del]").forEach(function (btn) {
-      btn.addEventListener("click", function (e) {
-        e.preventDefault(); e.stopPropagation();
-        pendingDeleteId = btn.getAttribute("data-del");
-        $("confirm-delete").classList.remove("hidden");
-      });
-    });
-    grid.querySelectorAll("[data-edit]").forEach(function (btn) {
-      btn.addEventListener("click", function (e) {
-        e.preventDefault(); e.stopPropagation();
-        openItemEdit(btn.getAttribute("data-edit"));
-      });
+    grid.querySelectorAll(".card").forEach(function (card) {
+      attachLongPress(card, function () { openItemEdit(card.getAttribute("data-id")); }, null);
     });
   }
 
+  function fillCategorySelect(selected) {
+    var sel = $("edit-category");
+    var html = '<option value="">other</option>';
+    getAllCategories().forEach(function (c) { html += '<option value="' + escapeHtml(c) + '">' + escapeHtml(c) + "</option>"; });
+    html += '<option value="__new__">create category</option>';
+    sel.innerHTML = html;
+    sel.value = (selected && getAllCategories().indexOf(selected) !== -1) ? selected : "";
+  }
+  function closeEdit() { $("edit-cat-overlay").classList.add("hidden"); editingItemId = null; }
   function openItemEdit(id) {
     var item = items.find(function (it) { return it.id === id; });
     if (!item) return;
     editingItemId = id;
-    $("edit-cat-input").value = item.category || "";
+    $("edit-title").value = item.title || "";
+    fillCategorySelect(item.category);
+    $("edit-category-new").classList.add("hidden");
+    $("edit-category-new").value = "";
+    setNote("edit-category-note", "");
     $("edit-purchased-input").checked = !!item.purchased;
-    var catList = $("cat-list");
-    catList.innerHTML = getCategories().filter(function (c) { return c !== "__uncategorized__"; })
-      .map(function (c) { return '<option value="' + escapeHtml(c) + '"></option>'; }).join("");
     $("edit-cat-overlay").classList.remove("hidden");
-    setTimeout(function () { $("edit-cat-input").focus(); }, 50);
   }
-  $("edit-cat-cancel").addEventListener("click", function () { $("edit-cat-overlay").classList.add("hidden"); editingItemId = null; });
-  $("edit-cat-overlay").addEventListener("click", function (e) { if (e.target === $("edit-cat-overlay")) { $("edit-cat-overlay").classList.add("hidden"); editingItemId = null; } });
+  $("edit-category").addEventListener("change", function () {
+    var isNew = this.value === "__new__";
+    var input = $("edit-category-new");
+    input.classList.toggle("hidden", !isNew);
+    setNote("edit-category-note", "");
+    if (isNew) { input.value = ""; input.focus(); }
+  });
+  $("edit-cat-cancel").addEventListener("click", closeEdit);
+  $("edit-cat-overlay").addEventListener("click", function (e) { if (e.target === $("edit-cat-overlay")) closeEdit(); });
   $("edit-cat-save").addEventListener("click", function () {
     if (!editingItemId) return;
+    var item = items.find(function (it) { return it.id === editingItemId; });
+    if (!item) { closeEdit(); return; }
+    var cat = $("edit-category").value;
+    if (cat === "__new__") {
+      cat = $("edit-category-new").value.trim();
+      if (!cat) { setNote("edit-category-note", "새 카테고리 이름을 입력해주세요.", true); return; }
+      if (isReserved(cat)) { setNote("edit-category-note", "사용할 수 없는 이름입니다.", true); return; }
+    }
     persistUpdateItem(editingItemId, {
-      category: $("edit-cat-input").value.trim() || null,
+      title: $("edit-title").value.trim() || item.title,
+      category: cat || null,
       purchased: $("edit-purchased-input").checked
     });
-    $("edit-cat-overlay").classList.add("hidden");
-    editingItemId = null;
+    closeEdit();
+  });
+  $("edit-delete").addEventListener("click", function () {
+    pendingDeleteId = editingItemId;
+    closeEdit();
+    $("confirm-delete").classList.remove("hidden");
+  });
+
+  // ---------- 카테고리 이름 변경 ----------
+  function openRename(name) {
+    renamingCategory = name;
+    var input = $("rename-input");
+    input.value = name;
+    setNote("rename-note", "");
+    $("rename-overlay").classList.remove("hidden");
+    input.focus(); input.select();
+  }
+  function closeRename() { $("rename-overlay").classList.add("hidden"); renamingCategory = null; }
+  $("rename-input").addEventListener("input", function () {
+    var v = this.value.trim();
+    if (isReserved(v)) setNote("rename-note", "사용할 수 없는 이름입니다.", true);
+    else if (v && v !== renamingCategory && getAllCategories().indexOf(v) !== -1) setNote("rename-note", "이미 있는 카테고리입니다. 저장하면 두 카테고리가 합쳐집니다.");
+    else setNote("rename-note", "");
+  });
+  $("rename-cancel").addEventListener("click", closeRename);
+  $("rename-overlay").addEventListener("click", function (e) { if (e.target === $("rename-overlay")) closeRename(); });
+  $("rename-save").addEventListener("click", function () {
+    var oldName = renamingCategory;
+    var v = $("rename-input").value.trim();
+    if (!v) { setNote("rename-note", "이름을 입력해주세요.", true); return; }
+    if (isReserved(v)) { setNote("rename-note", "사용할 수 없는 이름입니다.", true); return; }
+    if (v !== oldName) persistRenameCategory(oldName, v);
+    closeRename();
   });
 
   // ---------- 메뉴 ----------
@@ -438,7 +558,7 @@
   });
   $("menu-clear").addEventListener("click", function () {
     $("menu-panel").classList.add("hidden");
-    $("clear-msg").textContent = "담아둔 " + items.length + "개를 전부 삭제할까요? 되돌릴 수 없어요.";
+    $("clear-msg").textContent = items.length + "개의 아이템을 전부 삭제할까요? 되돌릴 수 없습니다.";
     $("confirm-clear").classList.remove("hidden");
   });
   $("cancel-clear").addEventListener("click", function () { $("confirm-clear").classList.add("hidden"); });
@@ -458,6 +578,7 @@
     setTimeout(function () { $("url-input").focus(); }, 50);
   }
   $("fab-add").addEventListener("click", openAddSheet);
+  $("cancel-add").addEventListener("click", function () { $("add-overlay").classList.add("hidden"); });
   $("add-overlay").addEventListener("click", function (e) { if (e.target === $("add-overlay")) $("add-overlay").classList.add("hidden"); });
 
   function showPreview(d, failed) {
@@ -494,9 +615,9 @@
     var url = normalizeUrl($("url-input").value);
     if (!url) return;
     var btn = $("fetch-info");
-    btn.disabled = true; btn.textContent = "가져오는 중…";
+    btn.disabled = true; btn.textContent = "loading···";
     fetchProductInfo(url).then(function (info) {
-      btn.disabled = false; btn.textContent = "정보 가져오기";
+      btn.disabled = false; btn.textContent = "add item";
       if (info && (info.title || info.image || info.price)) {
         showPreview({ url: url, title: info.title, image: info.image, price: info.price, currency: info.currency, site: info.site || hostnameOf(url), category: "" }, false);
       } else {
@@ -506,8 +627,7 @@
   });
 
   $("back-to-input").addEventListener("click", function () {
-    $("add-step-preview").classList.add("hidden");
-    $("add-step-input").classList.remove("hidden");
+    $("add-overlay").classList.add("hidden");
   });
 
   $("save-draft").addEventListener("click", function () {
