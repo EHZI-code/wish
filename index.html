@@ -11,6 +11,7 @@
   :root { --bg:#fff; --fg:#111; --muted:#666; --border:#ccc; --border-light:#e5e5e5; --chip-bg:#f0f0f0; --danger:#b3261e; }
   * { box-sizing: border-box; }
   html, body { height: 100%; }
+  body { overflow-x: hidden; }
   body { margin:0; font-family: "Fragment Mono", -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", monospace; font-size:12px; background: var(--bg); color: var(--fg); }
   button, input, select { font-family: inherit; }
   #root { min-height:100%; padding:16px; position:relative; }
@@ -53,15 +54,17 @@
   .tab-chip:first-child { padding-left:0; }
   .tab-chip.top { font-weight:700; }
   .tab-chip.active { text-decoration:underline; }
+  .tab-row { -webkit-user-select:none; user-select:none; scrollbar-width:none; -ms-overflow-style:none; }
+  .tab-row::-webkit-scrollbar { display:none; }
   .tab-sep { color:var(--border); font-size:12px; }
 
   .empty { margin-top:15vh; text-align:center; color:var(--muted); font-size:12px; }
 
-  .grid { display:grid; grid-template-columns:repeat(3,1fr); column-gap:0; row-gap:3px; margin:0 -3.9px; }
-  @media (min-width:640px) { .grid { grid-template-columns:repeat(4,1fr); } }
-  @media (min-width:980px) { .grid { grid-template-columns:repeat(6,1fr); } }
+  .grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); column-gap:0; row-gap:3px; margin:0 -3.9px; }
+  @media (min-width:640px) { .grid { grid-template-columns:repeat(4,minmax(0,1fr)); } }
+  @media (min-width:980px) { .grid { grid-template-columns:repeat(6,minmax(0,1fr)); } }
 
-  .card { border:none; border-radius:6px; padding:4px 3.9px; position:relative; text-decoration:none; color:inherit; display:block; cursor:pointer; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; -webkit-user-drag:none; }
+  .card { min-width:0; overflow-wrap:anywhere; border:none; border-radius:6px; padding:4px 3.9px; position:relative; text-decoration:none; color:inherit; display:block; cursor:pointer; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; -webkit-user-drag:none; }
   .thumb { width:100%; aspect-ratio:1/1; overflow:hidden; background:#f7f7f7; display:flex; align-items:center; justify-content:center; margin-bottom:5.4px; }
   .thumb img { width:100%; height:100%; object-fit:cover; display:block; -webkit-user-drag:none; }
   .thumb-fallback { font-size:22px; color:var(--muted); }
@@ -248,7 +251,9 @@
     el.addEventListener("touchend", cancel);
     el.addEventListener("touchmove", cancel);
     el.addEventListener("touchcancel", cancel);
-    el.addEventListener("mousedown", function () { if (Date.now() - lastTouch < 800) return; start(); });
+    var mx = 0;
+    el.addEventListener("mousedown", function (e) { if (Date.now() - lastTouch < 800) return; mx = e.clientX; start(); });
+    el.addEventListener("mousemove", function (e) { if (timer && Math.abs(e.clientX - mx) > 5) cancel(); });
     el.addEventListener("mouseup", cancel);
     el.addEventListener("mouseleave", cancel);
     el.addEventListener("contextmenu", function (e) { if (fired) e.preventDefault(); });
@@ -561,6 +566,24 @@
     if (v !== oldName) persistRenameCategory(oldName, v);
     closeRename();
   });
+
+  // 탭 줄: 마우스 드래그 / 휠로도 옆으로 스크롤
+  (function () {
+    var row = $("tab-row"), down = false, moved = false, sx = 0, sl = 0;
+    row.addEventListener("mousedown", function (e) { down = true; moved = false; sx = e.clientX; sl = row.scrollLeft; });
+    window.addEventListener("mousemove", function (e) {
+      if (!down) return;
+      var dx = e.clientX - sx;
+      if (Math.abs(dx) > 5) moved = true;
+      if (moved) row.scrollLeft = sl - dx;
+    });
+    window.addEventListener("mouseup", function () { down = false; });
+    row.addEventListener("click", function (e) { if (moved) { e.stopPropagation(); e.preventDefault(); moved = false; } }, true);
+    row.addEventListener("wheel", function (e) {
+      if (row.scrollWidth <= row.clientWidth) return;
+      if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) { row.scrollLeft += e.deltaY; e.preventDefault(); }
+    }, { passive: false });
+  })();
 
   // ---------- 메뉴 ----------
   $("menu-btn").addEventListener("click", function () { $("menu-panel").classList.toggle("hidden"); });
