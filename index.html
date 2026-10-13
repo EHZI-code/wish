@@ -29,6 +29,7 @@
   .btn.primary { background:var(--fg); color:#fff; border-color:var(--fg); font-weight:700; }
   .btn.primary:disabled { opacity:.4; cursor:not-allowed; }
   .btn.ghost { background:#fff; color:var(--muted); }
+  .btn.danger:disabled { opacity:.4; cursor:not-allowed; }
   .btn.danger { background:#fff; color:var(--danger); border-color:var(--danger); }
   .row { display:flex; gap:8px; }
   .row .btn { flex:1; }
@@ -41,7 +42,7 @@
   .title { font-size:12px; font-weight:700; margin:0; }
   .sub { display:flex; align-items:center; gap:8px; }
   .count { font-size:12px; color:var(--muted); }
-  .menu-btn { background:none; border:none; width:24px; height:24px; cursor:pointer; font-size:12px; color:var(--fg); }
+  .menu-btn { background:none; border:none; width:auto; padding:0 0 0 12px; text-align:right; height:24px; cursor:pointer; font-size:12px; color:var(--fg); }
   .menu-panel { position:absolute; top:52px; right:16px; background:#fff; border:1px solid var(--border); border-radius:6px; z-index:40; min-width:180px; overflow:hidden; }
   .menu-item { display:block; width:100%; text-align:left; padding:9px 12px; background:none; border:none; border-bottom:1px solid var(--border-light); font-size:12px; cursor:pointer; color:var(--fg); }
   .menu-item:last-child { border-bottom:none; }
@@ -49,17 +50,18 @@
 
   .tab-row { display:flex; align-items:center; overflow-x:auto; margin-bottom:12px; white-space:nowrap; }
   .tab-chip { flex:0 0 auto; font-size:12px; padding:2px 6px; border:none; background:none; color:var(--fg); cursor:pointer; white-space:nowrap; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; }
+  .tab-chip:first-child { padding-left:0; }
   .tab-chip.top { font-weight:700; }
   .tab-chip.active { text-decoration:underline; }
   .tab-sep { color:var(--border); font-size:12px; }
 
   .empty { margin-top:15vh; text-align:center; color:var(--muted); font-size:12px; }
 
-  .grid { display:grid; grid-template-columns:repeat(3,1fr); column-gap:5px; row-gap:3px; }
+  .grid { display:grid; grid-template-columns:repeat(3,1fr); column-gap:0; row-gap:3px; margin:0 -3.9px; }
   @media (min-width:640px) { .grid { grid-template-columns:repeat(4,1fr); } }
   @media (min-width:980px) { .grid { grid-template-columns:repeat(6,1fr); } }
 
-  .card { border:none; border-radius:6px; padding:4px; position:relative; text-decoration:none; color:inherit; display:block; cursor:pointer; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; -webkit-user-drag:none; }
+  .card { border:none; border-radius:6px; padding:4px 3.9px; position:relative; text-decoration:none; color:inherit; display:block; cursor:pointer; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; -webkit-user-drag:none; }
   .thumb { width:100%; aspect-ratio:1/1; overflow:hidden; background:#f7f7f7; display:flex; align-items:center; justify-content:center; margin-bottom:5.4px; }
   .thumb img { width:100%; height:100%; object-fit:cover; display:block; -webkit-user-drag:none; }
   .thumb-fallback { font-size:22px; color:var(--muted); }
@@ -161,6 +163,7 @@
   <div id="confirm-clear" class="confirm-overlay hidden">
     <div class="confirm-box">
       <p id="clear-msg"></p>
+      <div class="field"><input type="text" id="clear-input" autocomplete="off" autocapitalize="off" placeholder='type "delete all"' style="text-align:center;" /></div>
       <div class="row">
         <button class="btn ghost" id="cancel-clear">cancel</button>
         <button class="btn danger" id="do-clear">delete all</button>
@@ -333,11 +336,17 @@
 
   // ---------- 데이터 ----------
   function loadItems() {
-    sb.from("items").select("*").order("created_at", { ascending: false }).then(function (res) {
-      if (res.error) { console.error(res.error); return; }
-      items = res.data || [];
-      render();
-    });
+    var all = [];
+    function page(from) {
+      return sb.from("items").select("*").order("created_at", { ascending: false }).order("id").range(from, from + 999).then(function (res) {
+        if (res.error) { console.error(res.error); return; }
+        all = all.concat(res.data || []);
+        if ((res.data || []).length === 1000) return page(from + 1000);
+        items = all;
+        render();
+      });
+    }
+    page(0);
   }
   function persistInsert(item) {
     return sb.from("items").insert(item).select().then(function (res) {
@@ -357,6 +366,7 @@
     return sb.from("items").update(patch).eq("id", id).then(function (res) {
       if (res.error) { alert("edit failed: " + res.error.message); return; }
       items = items.map(function (it) { return it.id === id ? Object.assign({}, it, patch) : it; });
+      if (patch.created_at) items.sort(function (x, y) { return String(y.created_at).localeCompare(String(x.created_at)); });
       render();
     });
   }
@@ -514,7 +524,8 @@
     persistUpdateItem(editingItemId, {
       title: $("edit-title").value.trim() || item.title,
       category: cat || null,
-      purchased: $("edit-purchased-input").checked
+      purchased: $("edit-purchased-input").checked,
+      created_at: new Date().toISOString() // 수정(저장)하면 맨 위로
     });
     closeEdit();
   });
@@ -559,10 +570,15 @@
   $("menu-clear").addEventListener("click", function () {
     $("menu-panel").classList.add("hidden");
     $("clear-msg").textContent = items.length + "개의 아이템을 전부 삭제할까요? 되돌릴 수 없습니다.";
+    $("clear-input").value = "";
+    $("do-clear").disabled = true;
     $("confirm-clear").classList.remove("hidden");
   });
+  $("clear-input").addEventListener("input", function () {
+    $("do-clear").disabled = this.value.trim().toLowerCase() !== "delete all";
+  });
   $("cancel-clear").addEventListener("click", function () { $("confirm-clear").classList.add("hidden"); });
-  $("do-clear").addEventListener("click", function () { persistClearAll(); $("confirm-clear").classList.add("hidden"); });
+  $("do-clear").addEventListener("click", function () { if ($("clear-input").value.trim().toLowerCase() !== "delete all") return; persistClearAll(); $("confirm-clear").classList.add("hidden"); });
   $("cancel-delete").addEventListener("click", function () { $("confirm-delete").classList.add("hidden"); pendingDeleteId = null; });
   $("do-delete").addEventListener("click", function () {
     if (pendingDeleteId) persistDelete(pendingDeleteId);
