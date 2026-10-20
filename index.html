@@ -3,9 +3,12 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
-<title>위시함</title>
+<title>위시템</title>
+<link rel="apple-touch-icon" href="/api/icon">
+<link rel="icon" type="image/png" href="/api/icon">
+<meta name="apple-mobile-web-app-title" content="위시템">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fragment+Mono&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fragment+Mono&family=Libre+Baskerville:wght@400&display=swap">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
   :root { --bg:#fff; --fg:#111; --muted:#666; --border:#ccc; --border-light:#e5e5e5; --chip-bg:#f0f0f0; --danger:#b3261e; }
@@ -40,7 +43,8 @@
   #login-toggle button { background:none; border:none; color:var(--fg); text-decoration:underline; cursor:pointer; font-size:12px; padding:0; }
 
   .header { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; gap:12px; }
-  .title { font-size:12px; font-weight:700; margin:0; }
+  .title { font-size:12px; font-weight:700; margin:0; line-height:1; }
+  .logo { font-family:"Libre Baskerville", Georgia, serif; font-size:34px; font-weight:400; line-height:1; display:inline-block; color:var(--fg); transform:translate(var(--lx, 0px), var(--ly, 0px)); }
   .sub { display:flex; align-items:center; gap:8px; }
   .count { font-size:12px; color:var(--muted); }
   .menu-btn { background:none; border:none; width:auto; padding:0 0 0 12px; text-align:right; height:24px; cursor:pointer; font-size:12px; color:var(--fg); }
@@ -50,7 +54,7 @@
   .menu-email { padding:9px 12px; font-size:12px; color:var(--muted); border-bottom:1px solid var(--border-light); word-break:break-all; }
 
   .tab-row { display:flex; align-items:center; overflow-x:auto; margin-bottom:12px; white-space:nowrap; }
-  .tab-chip { flex:0 0 auto; font-size:12px; padding:2px 6px; border:none; background:none; color:var(--fg); cursor:pointer; white-space:nowrap; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; }
+  .tab-chip { flex:0 0 auto; font-size:12px; padding:2px 6px; border:none; background:none; color:var(--muted); cursor:pointer; white-space:nowrap; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; }
   .tab-chip:first-child { padding-left:0; }
   .tab-chip.top { font-weight:700; }
   .tab-chip.active { text-decoration:underline; }
@@ -83,7 +87,7 @@
 
   .confirm-overlay { position:fixed; inset:0; background:rgba(0,0,0,.4); z-index:60; display:flex; align-items:center; justify-content:center; padding:24px; }
   .confirm-box { background:#fff; border-radius:8px; padding:18px; max-width:320px; width:100%; text-align:center; }
-  .confirm-box p { font-size:12px; margin:0 0 14px; }
+  .confirm-box p { font-size:12px; margin:0 0 14px; white-space:pre-line; }
   .banner { padding:9px 12px; border-radius:6px; font-size:12px; margin-bottom:12px; border:1px solid var(--border-light); background:var(--chip-bg); }
 </style>
 </head>
@@ -91,7 +95,7 @@
 <div id="root">
 
   <div id="login-view">
-    <h1>위시함</h1>
+    <h1><span class="logo">*</span></h1>
     <p class="sub">로그인하면 저장한 아이템들을 볼 수 있습니다.</p>
     <div class="field"><label>e-mail</label><input type="email" id="login-email" autocomplete="username" /></div>
     <div class="field"><label>password</label><input type="password" id="login-password" autocomplete="current-password" /></div>
@@ -102,7 +106,7 @@
 
   <div id="app-view" class="hidden">
     <div class="header">
-      <h1 class="title">위시함</h1>
+      <h1 class="title"><span class="logo">*</span></h1>
       <div class="sub">
         <span class="count" id="item-count">0 items</span>
         <button class="menu-btn" id="menu-btn">⋯</button>
@@ -110,6 +114,7 @@
     </div>
     <div id="menu-panel" class="menu-panel hidden">
       <div class="menu-email" id="menu-email"></div>
+      <button class="menu-item" id="menu-backup">back-up</button>
       <button class="menu-item" id="menu-clear">delete all</button>
       <button class="menu-item" id="menu-logout">log-out</button>
     </div>
@@ -141,8 +146,9 @@
         <div class="field"><label>site*</label><input type="text" id="draft-site" /></div>
         <div class="field">
           <label>category</label>
-          <input type="text" id="draft-category" list="cat-list" placeholder="e.g. clothes, home, tech" />
-          <datalist id="cat-list"></datalist>
+          <select id="draft-category"></select>
+          <input type="text" id="draft-category-new" class="hidden" maxlength="20" placeholder="new category name" style="margin-top:8px;" />
+          <div class="field-note" id="draft-category-note"></div>
         </div>
         <div class="hint" style="margin:0 0 12px;">*는 필수 입력입니다.</div>
         <div class="row">
@@ -159,6 +165,16 @@
       <div class="row">
         <button class="btn ghost" id="cancel-delete">cancel</button>
         <button class="btn danger" id="do-delete">delete</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="confirm-backup" class="confirm-overlay hidden">
+    <div class="confirm-box">
+      <p id="backup-msg"></p>
+      <div class="row">
+        <button class="btn ghost" id="cancel-backup">cancel</button>
+        <button class="btn primary" id="do-backup">send</button>
       </div>
     </div>
   </div>
@@ -291,10 +307,64 @@
 
   // ---------- 자동 정보 가져오기: 우리 자신의 서버 함수를 호출 ----------
   function fetchProductInfo(url) {
-    return fetch("/api/fetch-product?url=" + encodeURIComponent(url))
-      .then(function (res) { if (!res.ok) return null; return res.json(); })
+    return sb.auth.getSession().then(function (r) {
+      var token = r && r.data && r.data.session && r.data.session.access_token;
+      if (!token) return null;
+      return fetch("/api/fetch-product?url=" + encodeURIComponent(url), { headers: { Authorization: "Bearer " + token } })
+        .then(function (res) { if (!res.ok) return null; return res.json(); });
+    })
       .catch(function () { return null; });
   }
+
+  // 로고(*) 위치 보정: 별표는 글자 윗부분에 그려져서 가운데 정렬이 안 맞는다.
+  // 폰트가 로드된 뒤 별표 그림의 실제 위치를 재서, 줄 가운데와 왼쪽 끝선(16px)에 맞춘다.
+  function alignLogo() {
+    try {
+      var el = document.querySelector(".logo");
+      if (!el) return;
+      var cs = getComputedStyle(el);
+      var ctx = document.createElement("canvas").getContext("2d");
+      ctx.font = cs.fontWeight + " " + cs.fontSize + " " + cs.fontFamily;
+      var m = ctx.measureText("*");
+      if (m.fontBoundingBoxAscent === undefined || m.actualBoundingBoxAscent === undefined) return;
+      var size = parseFloat(cs.fontSize);
+      var baselineTop = (size - (m.fontBoundingBoxAscent + m.fontBoundingBoxDescent)) / 2 + m.fontBoundingBoxAscent;
+      var inkCenterAboveBaseline = (m.actualBoundingBoxAscent - m.actualBoundingBoxDescent) / 2;
+      var ly = size / 2 - (baselineTop - inkCenterAboveBaseline);
+      var lx = m.actualBoundingBoxLeft;
+      document.documentElement.style.setProperty("--ly", ly.toFixed(2) + "px");
+      document.documentElement.style.setProperty("--lx", lx.toFixed(2) + "px");
+    } catch (e) {}
+  }
+  // 홈 화면 아이콘: 앱 로고와 똑같은 * 모양이 되도록, 로드된 로고 폰트로 직접 그려서 아이콘으로 지정한다.
+  // (폰트가 로드되지 않았거나 실패하면 /api/icon 의 기본 아이콘이 그대로 쓰인다.)
+  function makeIcon() {
+    try {
+      if (!document.fonts || !document.fonts.check('100px "Libre Baskerville"', "*")) return;
+      var W = 1000, c = document.createElement("canvas"); c.width = c.height = W;
+      var x = c.getContext("2d");
+      x.fillStyle = "#fff"; x.fillRect(0, 0, W, W);
+      x.fillStyle = "#111"; x.font = '400 600px "Libre Baskerville"';
+      x.textBaseline = "alphabetic"; x.fillText("*", 250, 700);
+      var d = x.getImageData(0, 0, W, W).data, x0 = W, y0 = W, x1 = -1, y1 = -1;
+      for (var yy = 0; yy < W; yy++) for (var xx = 0; xx < W; xx++) {
+        if (d[(yy * W + xx) * 4] < 200) { if (xx < x0) x0 = xx; if (xx > x1) x1 = xx; if (yy < y0) y0 = yy; if (yy > y1) y1 = yy; }
+      }
+      if (x1 < 0) return;
+      var o = document.createElement("canvas"); o.width = o.height = 180;
+      var ox = o.getContext("2d");
+      ox.fillStyle = "#fff"; ox.fillRect(0, 0, 180, 180);
+      var sw = x1 - x0 + 1, sh = y1 - y0 + 1, k = (180 * 0.46) / sh;
+      ox.imageSmoothingQuality = "high";
+      ox.drawImage(c, x0, y0, sw, sh, (180 - sw * k) / 2, (180 - sh * k) / 2, sw * k, sh * k);
+      var url = o.toDataURL("image/png");
+      document.querySelectorAll('link[rel="apple-touch-icon"], link[rel="icon"]').forEach(function (l) { l.href = url; });
+    } catch (e) {}
+  }
+  if (document.fonts && document.fonts.load) {
+    document.fonts.load('34px "Libre Baskerville"', "*").then(function () { alignLogo(); makeIcon(); }, alignLogo);
+    document.fonts.ready.then(alignLogo);
+  } else { alignLogo(); }
 
   // ---------- 인증 ----------
   function showLogin() { $("login-view").classList.remove("hidden"); $("app-view").classList.add("hidden"); }
@@ -330,7 +400,8 @@
   sb.auth.onAuthStateChange(function (event, session) {
     if (session) {
       showApp();
-      $("menu-email").textContent = session.user.email || "";
+      userEmail = session.user.email || "";
+      $("menu-email").textContent = userEmail;
       loadItems();
     } else {
       showLogin();
@@ -486,13 +557,33 @@
     });
   }
 
-  function fillCategorySelect(selected) {
-    var sel = $("edit-category");
+  function fillCategorySelect(selId, selected) {
+    var sel = $(selId);
     var html = '<option value="">other</option>';
     getAllCategories().forEach(function (c) { html += '<option value="' + escapeHtml(c) + '">' + escapeHtml(c) + "</option>"; });
     html += '<option value="__new__">create category</option>';
     sel.innerHTML = html;
     sel.value = (selected && getAllCategories().indexOf(selected) !== -1) ? selected : "";
+  }
+  // 카테고리 선택칸: "create category"를 고르면 입력칸이 나타난다
+  function wireCategorySelect(selId, newId, noteId) {
+    $(selId).addEventListener("change", function () {
+      var isNew = this.value === "__new__";
+      var input = $(newId);
+      input.classList.toggle("hidden", !isNew);
+      setNote(noteId, "");
+      if (isNew) { input.value = ""; input.focus(); }
+    });
+  }
+  // 선택값 -> 카테고리 이름. 문제가 있으면 null과 함께 오류 문구를 표시한다
+  function readCategory(selId, newId, noteId) {
+    var cat = $(selId).value;
+    if (cat === "__new__") {
+      cat = $(newId).value.trim();
+      if (!cat) { setNote(noteId, "새 카테고리 이름을 입력해주세요.", true); return { ok: false }; }
+      if (isReserved(cat)) { setNote(noteId, "사용할 수 없는 이름입니다.", true); return { ok: false }; }
+    }
+    return { ok: true, value: cat || null };
   }
   function closeEdit() { $("edit-cat-overlay").classList.add("hidden"); editingItemId = null; }
   function openItemEdit(id) {
@@ -500,35 +591,25 @@
     if (!item) return;
     editingItemId = id;
     $("edit-title").value = item.title || "";
-    fillCategorySelect(item.category);
+    fillCategorySelect("edit-category", item.category);
     $("edit-category-new").classList.add("hidden");
     $("edit-category-new").value = "";
     setNote("edit-category-note", "");
     $("edit-purchased-input").checked = !!item.purchased;
     $("edit-cat-overlay").classList.remove("hidden");
   }
-  $("edit-category").addEventListener("change", function () {
-    var isNew = this.value === "__new__";
-    var input = $("edit-category-new");
-    input.classList.toggle("hidden", !isNew);
-    setNote("edit-category-note", "");
-    if (isNew) { input.value = ""; input.focus(); }
-  });
+  wireCategorySelect("edit-category", "edit-category-new", "edit-category-note");
   $("edit-cat-cancel").addEventListener("click", closeEdit);
   $("edit-cat-overlay").addEventListener("click", function (e) { if (e.target === $("edit-cat-overlay")) closeEdit(); });
   $("edit-cat-save").addEventListener("click", function () {
     if (!editingItemId) return;
     var item = items.find(function (it) { return it.id === editingItemId; });
     if (!item) { closeEdit(); return; }
-    var cat = $("edit-category").value;
-    if (cat === "__new__") {
-      cat = $("edit-category-new").value.trim();
-      if (!cat) { setNote("edit-category-note", "새 카테고리 이름을 입력해주세요.", true); return; }
-      if (isReserved(cat)) { setNote("edit-category-note", "사용할 수 없는 이름입니다.", true); return; }
-    }
+    var rc = readCategory("edit-category", "edit-category-new", "edit-category-note");
+    if (!rc.ok) return;
     persistUpdateItem(editingItemId, {
       title: $("edit-title").value.trim() || item.title,
-      category: cat || null,
+      category: rc.value,
       purchased: $("edit-purchased-input").checked,
       created_at: new Date().toISOString() // 수정(저장)하면 맨 위로
     });
@@ -592,7 +673,7 @@
   });
   $("menu-clear").addEventListener("click", function () {
     $("menu-panel").classList.add("hidden");
-    $("clear-msg").textContent = items.length + "개의 아이템을 전부 삭제할까요? 되돌릴 수 없습니다.";
+    $("clear-msg").textContent = items.length + "개의 아이템을 전부 삭제할까요?\n되돌릴 수 없습니다.";
     $("clear-input").value = "";
     $("do-clear").disabled = true;
     $("confirm-clear").classList.remove("hidden");
@@ -600,6 +681,46 @@
   $("clear-input").addEventListener("input", function () {
     $("do-clear").disabled = this.value.trim().toLowerCase() !== "delete all";
   });
+  // ---------- back-up (이메일로 보내기) ----------
+  var userEmail = "";
+  function setBackupBusy(busy) { $("do-backup").disabled = busy; $("cancel-backup").disabled = busy; }
+  $("menu-backup").addEventListener("click", function () {
+    $("menu-panel").classList.add("hidden");
+    $("backup-msg").textContent = items.length + "개의 아이템을 이메일로 보낼까요?\n" + userEmail;
+    $("do-backup").classList.remove("hidden");
+    $("do-backup").textContent = "send";
+    $("cancel-backup").textContent = "cancel";
+    setBackupBusy(false);
+    $("confirm-backup").classList.remove("hidden");
+  });
+  $("cancel-backup").addEventListener("click", function () { $("confirm-backup").classList.add("hidden"); });
+  $("do-backup").addEventListener("click", function () {
+    setBackupBusy(true);
+    $("backup-msg").textContent = "sending···";
+    sb.auth.getSession().then(function (res) {
+      var token = res.data && res.data.session && res.data.session.access_token;
+      if (!token) throw new Error("로그인이 필요합니다.");
+      return fetch("/api/backup", { method: "POST", headers: { Authorization: "Bearer " + token } });
+    }).then(function (res) {
+      return res.json().catch(function () { return {}; }).then(function (j) { return { ok: res.ok, j: j }; });
+    }).then(function (r) {
+      setBackupBusy(false);
+      if (r.ok) {
+        $("backup-msg").textContent = "백업 메일을 보냈습니다.\n메일함을 확인해주세요.";
+        $("do-backup").classList.add("hidden");
+        $("cancel-backup").textContent = "ok";
+      } else {
+        var why = r.j.error === "no_mail_key" ? "메일 발송 설정이 아직 안 되어 있습니다." : (r.j.detail || r.j.error || "알 수 없는 오류");
+        $("backup-msg").textContent = "백업에 실패했습니다.\n" + why;
+        $("do-backup").textContent = "retry";
+      }
+    }).catch(function (e) {
+      setBackupBusy(false);
+      $("backup-msg").textContent = "백업에 실패했습니다.\n" + (e.message || "");
+      $("do-backup").textContent = "retry";
+    });
+  });
+
   $("cancel-clear").addEventListener("click", function () { $("confirm-clear").classList.add("hidden"); });
   $("do-clear").addEventListener("click", function () { if ($("clear-input").value.trim().toLowerCase() !== "delete all") return; persistClearAll(); $("confirm-clear").classList.add("hidden"); });
   $("cancel-delete").addEventListener("click", function () { $("confirm-delete").classList.add("hidden"); pendingDeleteId = null; });
@@ -627,11 +748,11 @@
     $("draft-title").value = d.title || "";
     $("draft-price").value = d.price || "";
     $("draft-site").value = d.site || "";
-    $("draft-category").value = d.category || "";
+    fillCategorySelect("draft-category", d.category || "");
+    $("draft-category-new").classList.add("hidden");
+    $("draft-category-new").value = "";
+    setNote("draft-category-note", "");
     renderPreviewThumb();
-    var catList = $("cat-list");
-    catList.innerHTML = getCategories().filter(function (c) { return c !== "__uncategorized__"; })
-      .map(function (c) { return '<option value="' + escapeHtml(c) + '"></option>'; }).join("");
     $("add-step-input").classList.add("hidden");
     $("add-step-preview").classList.remove("hidden");
   }
@@ -643,6 +764,7 @@
       : '<span class="thumb-fallback">' + escapeHtml(((draft && draft.site) || "?")[0] || "?") + "</span>";
   }
   $("draft-image").addEventListener("input", renderPreviewThumb);
+  wireCategorySelect("draft-category", "draft-category-new", "draft-category-note");
 
   $("skip-manual").addEventListener("click", function () {
     var url = normalizeUrl($("url-input").value);
@@ -671,6 +793,8 @@
 
   $("save-draft").addEventListener("click", function () {
     if (!draft || !draft.url) return;
+    var rc = readCategory("draft-category", "draft-category-new", "draft-category-note");
+    if (!rc.ok) return;
     var item = {
       url: draft.url,
       title: $("draft-title").value.trim() || $("draft-site").value.trim() || "제목 없음",
@@ -678,7 +802,7 @@
       price: $("draft-price").value.trim() || null,
       currency: draft.currency || null,
       site: $("draft-site").value.trim() || hostnameOf(draft.url),
-      category: $("draft-category").value.trim() || null
+      category: rc.value
     };
     persistInsert(item);
     $("add-overlay").classList.add("hidden");
