@@ -7,6 +7,7 @@
 <link rel="apple-touch-icon" href="/api/icon">
 <link rel="icon" type="image/png" href="/api/icon">
 <meta name="apple-mobile-web-app-title" content="위시템">
+<meta name="build" content="b4-login-gap">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fragment+Mono&family=Libre+Baskerville:wght@400&display=swap">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
@@ -46,6 +47,7 @@
   .header { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; gap:12px; }
   .title { font-size:12px; font-weight:700; margin:0; line-height:1; height:12px; display:flex; align-items:center; }
   .logo { font-family:"Libre Baskerville", Georgia, serif; font-size:34px; font-weight:400; line-height:34px; height:34px; margin:-11px 0; flex:none; display:block; color:var(--fg); transform:translate(var(--lx, 0px), var(--ly, 0px)); }
+  .title .logo { transform:translate(var(--hlx, var(--lx, 0px)), var(--hly, var(--ly, 0px))); }
   .sub { display:flex; align-items:center; gap:8px; }
   .count { font-size:12px; color:var(--muted); }
   .menu-btn { background:none; border:none; width:auto; padding:0 0 0 12px; text-align:right; height:24px; cursor:pointer; font-size:12px; color:var(--fg); }
@@ -362,14 +364,51 @@
       document.querySelectorAll('link[rel="apple-touch-icon"], link[rel="icon"]').forEach(function (l) { l.href = url; });
     } catch (e) {}
   }
+  // 메인 상단 로고: 화면에 실제로 그려진 * 의 픽셀 위치를 재서, 오른쪽 'items' 줄의 세로 가운데와 왼쪽 끝선에 맞춘다.
+  function alignHeaderLogo() {
+    try {
+      var el = document.querySelector(".title .logo"), ref = document.querySelector(".header .count");
+      if (!el || !ref || !el.offsetParent) return;
+      var root = document.documentElement.style;
+      var cs = getComputedStyle(el), size = parseFloat(cs.fontSize), S = 4;
+      var probe = document.createElement("span");
+      probe.style.cssText = "display:inline-block;width:0;height:0;vertical-align:baseline";
+      var prevTransform = el.style.transform;
+      el.style.transform = "none";            // 측정하는 동안만 위치 보정을 끈다
+      el.appendChild(probe);
+      var baseY = probe.getBoundingClientRect().bottom;
+      var r = ref.getBoundingClientRect();
+      el.removeChild(probe);
+      el.style.transform = prevTransform;
+      var W = Math.ceil(size * S * 2), c = document.createElement("canvas");
+      c.width = c.height = W;
+      var x = c.getContext("2d");
+      x.font = cs.fontWeight + " " + (size * S) + "px " + cs.fontFamily;
+      x.textBaseline = "alphabetic"; x.fillStyle = "#000";
+      var ox = size * S * 0.5, bl = size * S * 1.4;
+      x.fillText("*", ox, bl);
+      var d = x.getImageData(0, 0, W, W).data, minX = W, minY = W, maxY = -1;
+      for (var yy = 0; yy < W; yy++) for (var xx = 0; xx < W; xx++) {
+        if (d[(yy * W + xx) * 4 + 3] > 40) { if (xx < minX) minX = xx; if (yy < minY) minY = yy; if (yy > maxY) maxY = yy; }
+      }
+      if (maxY < 0) return;
+      var centerAbove = ((bl - minY) + (bl - (maxY + 1))) / 2 / S;
+      var inkCenterY = baseY - centerAbove;
+      root.setProperty("--hly", (r.top + r.height / 2 - inkCenterY).toFixed(2) + "px");
+      root.setProperty("--hlx", (-(minX - ox) / S).toFixed(2) + "px");
+    } catch (e) {}
+  }
+  var alignTimer = null;
+  window.addEventListener("resize", function () { clearTimeout(alignTimer); alignTimer = setTimeout(alignHeaderLogo, 100); });
+
   if (document.fonts && document.fonts.load) {
-    document.fonts.load('34px "Libre Baskerville"', "*").then(function () { alignLogo(); makeIcon(); }, alignLogo);
-    document.fonts.ready.then(alignLogo);
-  } else { alignLogo(); }
+    document.fonts.load('34px "Libre Baskerville"', "*").then(function () { alignLogo(); alignHeaderLogo(); makeIcon(); }, alignLogo);
+    document.fonts.ready.then(function () { alignLogo(); alignHeaderLogo(); });
+  } else { alignLogo(); alignHeaderLogo(); }
 
   // ---------- 인증 ----------
   function showLogin() { $("login-view").classList.remove("hidden"); $("app-view").classList.add("hidden"); }
-  function showApp() { $("login-view").classList.add("hidden"); $("app-view").classList.remove("hidden"); }
+  function showApp() { $("login-view").classList.add("hidden"); $("app-view").classList.remove("hidden"); alignHeaderLogo(); }
   function setLoginMsg(msg, isErr) { var el = $("login-msg"); el.textContent = msg || ""; el.className = isErr ? "err" : ""; }
 
   $("to-signup").addEventListener("click", function () {
